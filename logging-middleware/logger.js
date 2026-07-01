@@ -1,47 +1,64 @@
-import axios from "axios";
-import config from "./config.js";
+    const axios = require("axios");
+    require("dotenv").config();
 
-export async function Log(stack, level, packageName, message) {
+    const VALID_STACKS = ["backend", "frontend"];
 
-    const body = {
-        stack,
-        level,
-        package: packageName,
-        message
-    };
+    const VALID_LEVELS = [
+    "debug",
+    "info",
+    "warn",
+    "error",
+    "fatal",
+    ];
 
+    const VALID_PACKAGES = [
+    "cache",
+    "controller",
+    "cron_job",
+    "db",
+    "domain",
+    "handler",
+    "repository",
+    "route",
+    "service",
+    "auth",
+    "config",
+    "middleware",
+    "utils",
+    ];
+
+    async function Log(stack, level, packageName, message) {
     try {
+        if (!VALID_STACKS.includes(stack))
+        throw new Error("Invalid stack");
+
+        if (!VALID_LEVELS.includes(level))
+        throw new Error("Invalid level");
+
+        if (!VALID_PACKAGES.includes(packageName))
+        throw new Error("Invalid package");
+
         const response = await axios.post(
-            config.api,
-            body,
-            {
-                headers: {
-                    Authorization: `Bearer ${config.token}`,
-                    "Content-Type": "application/json"
-                },
-                timeout: 10000
-            }
+        process.env.LOG_API_URL,
+        {
+            stack,
+            level,
+            package: packageName,
+            message,
+        },
+        {
+            headers: {
+            Authorization: `Bearer ${process.env.ACCESS_TOKEN}`,
+            "Content-Type": "application/json",
+            },
+        }
         );
 
-        console.log("SUCCESS:");
-        console.log(response.status);
-        console.log(response.data);
-
         return response.data;
-
-  } catch (err) {
-
-    console.log("========== ERROR ==========");
-
-    if (err.response) {
-        console.log("Status:", err.response.status);
-        console.log("Response:", err.response.data);
-    } else {
-        console.log("Message:", err.message);
+    } catch (error) {
+    console.error("Logging failed:", error.response?.data || error.message);
+    return null;
+}
     }
 
-    console.log("===========================");
-
-    throw err;
-}
-}
+    module.exports = Log;

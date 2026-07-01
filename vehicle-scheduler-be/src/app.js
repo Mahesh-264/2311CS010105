@@ -1,25 +1,29 @@
-const express = require("express");
-
-const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
-
-const schedulerRoutes = require("./routes/scheduler.routes");
+const express = require('express');
+const cors = require('cors');
+const Log = require('./middleware/logger');
+const schedulerRoutes = require('./routes/schedulerRoutes');
 
 const app = express();
 
-app.use(express.json());
+app.disable('x-powered-by');
 app.use(cors());
-app.use(helmet());
-app.use(morgan("dev"));
+app.use(express.json());
 
-app.get("/", (req, res) => {
-    res.json({
-        success: true,
-        message: "Vehicle Scheduler API Running 🚗"
-    });
+app.use(async (req, _res, next) => {
+  try {
+    await Log(
+      'backend',
+      'info',
+      'middleware',
+      `Incoming request: ${req.method} ${req.originalUrl}`,
+    );
+  } catch (_error) {
+    // Logging must never interrupt request processing.
+  }
+
+  next();
 });
 
-app.use("/api", schedulerRoutes);
+app.use('/', schedulerRoutes);
 
 module.exports = app;
